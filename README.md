@@ -1,4 +1,4 @@
-# WifiMacCurrent · 当前 Wi-Fi MAC
+# Mac地址修改器
 
 面向 LSPosed 的当前 Wi-Fi MAC 临时切换模块，支持实验性 Wi-Fi 7 MLO、连接详情、主题配色及深色模式。
 
