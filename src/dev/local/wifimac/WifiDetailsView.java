@@ -86,7 +86,10 @@ public final class WifiDetailsView extends LinearLayout {
     public static String standard(int n,int frequency){switch(n){case 1:return "802.11a/b/g（传统 Wi-Fi）";case 4:return "802.11n · Wi-Fi 4";case 5:return "802.11ac · Wi-Fi 5";case 6:return "802.11ax · "+(frequency>=5925?"Wi-Fi 6E":"Wi-Fi 6");case 7:return "802.11ad · WiGig";case 8:return "802.11be · Wi-Fi 7";default:return "系统未报告";}}
     private static String security(int n){String[] names={"开放网络","WEP","WPA/WPA2-Personal","WPA/WPA2-Enterprise","WPA3-SAE","WPA3-Enterprise 192-bit","OWE","WAPI-PSK","WAPI-CERT","WPA3-Enterprise","OSEN","Passpoint R1/R2","Passpoint R3","DPP"};return n>=0&&n<names.length?names[n]:"系统未报告（"+n+"）";}
     private String path(Network n){NetworkCapabilities c=n==null?null:cm.getNetworkCapabilities(n);if(c==null)return "无可用默认网络";if(c.hasTransport(NetworkCapabilities.TRANSPORT_VPN))return "VPN（查询结果可能为 VPN 出口）";if(c.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))return "Wi-Fi";if(c.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))return "移动数据（不是 Wi-Fi 出口）";return "其他网络";}
+    private String signalValue="未连接 / 未报告";
+    public String signalText(){return signalValue;}
     public void refresh(){
+        signalValue="未连接 / 未报告";
         try {
             WifiInfo w=wm.getConnectionInfo();
             boolean fine=activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED;
@@ -117,7 +120,10 @@ public final class WifiDetailsView extends LinearLayout {
                 put("SSID",module.getString("ssid",w.getSSID()));put("Wi-Fi 标准",standard(w.getWifiStandard(),frequency));
                 String band=frequency>=57000?"60 GHz":frequency>=5925?"6 GHz":frequency>=4900?"5 GHz":frequency>=2400?"2.4 GHz":"未知频段";
                 put("频段 / 信道",band+" · "+frequency+" MHz · 信道 "+ScanResult.convertFrequencyMhzToChannelIfSupported(frequency));
-                put("信号强度",w.getRssi()+" dBm");put("收发协商速率","发送 "+speed(w.getTxLinkSpeedMbps())+" / 接收 "+speed(w.getRxLinkSpeedMbps()));
+                int rssi=w.getRssi();
+                if(w.getSupplicantState()==SupplicantState.COMPLETED && rssi > -127 && rssi < 0)
+                    signalValue=rssi+" dBm"+(w.getWifiStandard()==8?"（关联链路）":"");
+                put("信号强度",signalValue);put("收发协商速率","发送 "+speed(w.getTxLinkSpeedMbps())+" / 接收 "+speed(w.getRxLinkSpeedMbps()));
                 put("设备支持的最高速率","发送 "+speed(w.getMaxSupportedTxLinkSpeedMbps())+" / 接收 "+speed(w.getMaxSupportedRxLinkSpeedMbps()));
                 put("认证方式",security(w.getCurrentSecurityType()));put("BSSID（接入点）","02:00:00:00:00:00".equals(w.getBSSID())?"被系统隐藏（请检查权限）":w.getBSSID());put("连接状态",String.valueOf(w.getSupplicantState()));
             }

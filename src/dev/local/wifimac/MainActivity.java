@@ -24,8 +24,9 @@ public final class MainActivity extends Activity {
     private ScrollView addressPage, settingsPage, detailsPage;
     private TextView addressTab, settingsTab, detailsTab;
     private WifiDetailsView details;
+    private TextView signal;
     private final Runnable poll = new Runnable() {
-        @Override public void run() { if (visible) { request("query"); if(detailsPage.getVisibility()==View.VISIBLE)details.refresh(); ui.postDelayed(this, 3000); } }
+        @Override public void run() { if (visible) { request("query"); details.refresh(); signal.setText("Wi-Fi 信号强度："+details.signalText()); ui.postDelayed(this, 3000); } }
     };
     private int dp(int n) { return Math.round(n * getResources().getDisplayMetrics().density); }
     private LinearLayout column() {
@@ -115,6 +116,7 @@ public final class MainActivity extends Activity {
         live.addView(copy, new LinearLayout.LayoutParams(-2, -2));
         divider(live);
         live.addView(label("连接详情", 18, INK));
+        signal = label("Wi-Fi 信号强度：正在读取…", 16, ACCENT); gap(live, 8); live.addView(signal);
         connection = label("正在读取设备与链路地址", 14, MUTED); gap(live, 5); live.addView(connection);
         section(home, "修改地址");
         LinearLayout change = card(home);
@@ -155,8 +157,9 @@ public final class MainActivity extends Activity {
         help.addView(label("有效范围", 19, INK)); gap(help, 5);
         help.addView(label("仅修改当前主 Wi-Fi。同一网络重连时保留，切换其他网络或重启后清除。允许有效单播地址；请勿与同网设备重复。", 14, MUTED));
         section(settings, "关于"); LinearLayout about = card(settings);
-        about.addView(label("Wi-Fi MAC  0.6.0", 19, INK)); gap(about, 5);
+        about.addView(label("Wi-Fi MAC  0.6.1", 19, INK)); gap(about, 5);
         about.addView(label("MLO 实验版 · LSPosed 模块\n诊断日志：WifiMacCurrent", 14, MUTED));
+        gap(about, 12); about.addView(label("作者：垚沣酱", 16, ACCENT));
 
         View line = new View(this); line.setBackgroundColor(palette.divider); shell.addView(line, new LinearLayout.LayoutParams(-1, dp(1)));
         LinearLayout nav = new LinearLayout(this); nav.setPadding(dp(12), dp(9), dp(12), dp(9));
