@@ -4,7 +4,13 @@
 
 An experimental LSPosed module for changing the active Wi-Fi station MAC, with MLO support, network diagnostics, and configurable light/dark themes.
 
-**当前版本：0.6.0 · MLO 实验版 · MIT License**
+**当前版本：0.6.1 · MLO 实验版 · MIT License**
+
+## 0.6.1 更新
+
+- 连接详情新增当前 Wi-Fi 信号强度（dBm），前台约每 3 秒刷新。
+- 设置底部添加作者：垚沣酱。
+- 系统 Hook 未变，从 0.6.0 升级无需重启。
 
 ## 功能
 
@@ -28,13 +34,13 @@ MLO 设备地址与每条链路地址可能不同。驱动接受请求后仍应�
 
 ## 安装与使用
 
-1. 从 [Releases](https://github.com/Jushann/WifiMacCurrent/releases) 下载 APK 并安装。
+1. 从 [Releases](https://github.com/Jushann/MAC-Address-Modifier-LSPosed/releases) 下载 APK 并安装。
 2. 在 LSPosed 中启用“当前 Wi-Fi MAC”，作用域选择 **系统框架**。首次安装或更新 Hook 后重启一次。
 3. 连接 Wi-Fi，打开“地址”页，填写或生成 MAC，点击“应用并重连”。应用时会短暂断网。
 4. 在路由器在线列表核对地址。要恢复时进入“设置 → 恢复并重连”。
 5. “Wi-Fi 详情”页查看网络参数；“设置 → 外观”切换主题。
 
-当前版本沿用 0.3 的 Hook，从 0.3 或更新版本升级到 0.6 无需为界面变更重启。LSPosed 仍可能显示通用的重启提醒。
+当前版本沿用 0.3 的 Hook，从 0.3 或更新版本升级到 0.6.1 无需为界面变更重启。LSPosed 仍可能显示通用的重启提醒。
 
 临时规则仅匹配当前主 Wi-Fi 的网络 ID 与配置标识，同网络重连保留；切换其他主网络或重启后清除。双 Wi-Fi 的另一个独立网络不在修改范围。地址不能与同网设备重复；驱动可能拒绝部分合法地址。
 
@@ -61,7 +67,7 @@ New-Item -ItemType Directory -Force dist | Out-Null
   -BuildTools "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0" `
   -XposedApi 'C:\deps\api-82.jar' `
   -Jdk 'C:\Program Files\Java\jdk-17' `
-  -OutputApk "$PWD\dist\WifiMacCurrent-0.6.0.apk"
+  -OutputApk "$PWD\dist\WifiMacCurrent-0.6.1.apk"
 ```
 
 脚本会在 `build/` 生成本地测试签名密钥。这是开发用途的签名流程；私钥不随源码发布。自行构建产生的签名通常不同，不能直接覆盖安装已有 Release APK。不要提交或公开自己的签名密钥。
