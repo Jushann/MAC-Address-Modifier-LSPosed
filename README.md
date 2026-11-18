@@ -4,13 +4,17 @@
 
 An experimental LSPosed module for changing the active Wi-Fi station MAC, with MLO support, network diagnostics, and configurable light/dark themes.
 
-**当前版本：0.6.1 · MLO 实验版 · MIT License**
+**当前版本：0.7.2 · MLO 实验版 · MIT License**
 
-## 0.6.1 更新
+## 0.7.2 更新
 
-- 连接详情新增当前 Wi-Fi 信号强度（dBm），前台约每 3 秒刷新。
-- 设置底部添加作者：垚沣酱。
-- 系统 Hook 未变，从 0.6.0 升级无需重启。
+- 连接详情显示 Wi-Fi 信道、频段和频率。
+- 新增免费 IP 检测，界面遵循现有主题与圆角卡片风格。
+- 在 **设置最底部 → 开发者趣味隐藏功能 → 启用 IP 检测** 打开入口；默认关闭，开关状态保存在本机。
+- 检测仅在点击“开始检测 / 刷新”后执行。支持出口 IP、IPinfo 基础属性、网站响应及耗时、Anthropic 全局服务状态、系统 DNS 配置、原生 IPv4 UDP/STUN 出口和隐藏结果。
+- 免费版不提供可靠信誉评分、住宅/代理分类、滥用历史、DNS 泄露结论或浏览器 WebRTC/指纹检测。未知不表示安全；HTTP 200 不等于 Claude 账号可用。
+- 新检测向 IPIP、Cloudflare、claude.ai、IPinfo、anthropic.com、status.anthropic.com 与 Google STUN 发起请求，服务可看到出口 IP。UDP 可能经不同出口；不主动绕过 VPN。IPinfo 无 Token 接口可能限流。
+- 系统 Hook 未变，已有正常工作的模块覆盖升级无需重启。
 
 ## 功能
 
@@ -40,7 +44,7 @@ MLO 设备地址与每条链路地址可能不同。驱动接受请求后仍应�
 4. 在路由器在线列表核对地址。要恢复时进入“设置 → 恢复并重连”。
 5. “Wi-Fi 详情”页查看网络参数；“设置 → 外观”切换主题。
 
-当前版本沿用 0.3 的 Hook，从 0.3 或更新版本升级到 0.6.1 无需为界面变更重启。LSPosed 仍可能显示通用的重启提醒。
+当前版本沿用 0.3 的 Hook，从 0.3 或更新版本升级到 0.7.2 无需为界面变更重启。LSPosed 仍可能显示通用的重启提醒。
 
 临时规则仅匹配当前主 Wi-Fi 的网络 ID 与配置标识，同网络重连保留；切换其他主网络或重启后清除。双 Wi-Fi 的另一个独立网络不在修改范围。地址不能与同网设备重复；驱动可能拒绝部分合法地址。
 
@@ -67,7 +71,7 @@ New-Item -ItemType Directory -Force dist | Out-Null
   -BuildTools "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0" `
   -XposedApi 'C:\deps\api-82.jar' `
   -Jdk 'C:\Program Files\Java\jdk-17' `
-  -OutputApk "$PWD\dist\WifiMacCurrent-0.6.1.apk"
+  -OutputApk "$PWD\dist\WifiMacCurrent-0.7.2.apk"
 ```
 
 脚本会在 `build/` 生成本地测试签名密钥。这是开发用途的签名流程；私钥不随源码发布。自行构建产生的签名通常不同，不能直接覆盖安装已有 Release APK。不要提交或公开自己的签名密钥。
