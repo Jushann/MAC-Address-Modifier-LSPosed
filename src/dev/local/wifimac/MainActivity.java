@@ -18,15 +18,15 @@ public final class MainActivity extends Activity {
     private EditText mac;
     private Button apply, clear, copy;
     private String key = "", actualMac = "";
-    private boolean visible, inFlight;
+    private boolean visible, inFlight, ipEnabled;
     private ThemePalette palette;
     private int BG, SURFACE, INK, MUTED, ACCENT, selectedPage;
     private ScrollView addressPage, settingsPage, detailsPage;
     private TextView addressTab, settingsTab, detailsTab;
-    private WifiDetailsView details;
-    private TextView signal;
+    private WifiDetailsView details; private IpDiagnosticsView diagnostics; private ScrollView riskPage; private TextView riskTab;
+    private TextView signal, channel;
     private final Runnable poll = new Runnable() {
-        @Override public void run() { if (visible) { request("query"); details.refresh(); signal.setText("Wi-Fi 信号强度："+details.signalText()); ui.postDelayed(this, 3000); } }
+        @Override public void run() { if (visible) { request("query"); details.refresh(); signal.setText("Wi-Fi 信号强度："+details.signalText()); channel.setText("Wi-Fi 信道："+details.channelText()); ui.postDelayed(this, 3000); } }
     };
     private int dp(int n) { return Math.round(n * getResources().getDisplayMetrics().density); }
     private LinearLayout column() {
@@ -64,9 +64,10 @@ public final class MainActivity extends Activity {
     }
     private void enabled(Button b, boolean value) { b.setEnabled(value); b.setAlpha(value ? 1f : .50f); }
     private void selectPage(int page) {
+        if(page==3&&!ipEnabled)page=2;
         selectedPage = page;
-        ScrollView[] views={addressPage,detailsPage,settingsPage}; TextView[] tabs={addressTab,detailsTab,settingsTab};
-        for(int i=0;i<3;i++){views[i].setVisibility(i==page?View.VISIBLE:View.GONE);tabs[i].setTextColor(i==page?ACCENT:MUTED);
+        ScrollView[] views={addressPage,detailsPage,settingsPage,riskPage}; TextView[] tabs={addressTab,detailsTab,settingsTab,riskTab};
+        for(int i=0;i<4;i++){views[i].setVisibility(i==page?View.VISIBLE:View.GONE);tabs[i].setTextColor(i==page?ACCENT:MUTED);
             tabs[i].setBackground(shape(i==page?palette.secondary:BG,22));tabs[i].setSelected(i==page);}
         if(page==1)details.refresh();
     }
@@ -76,6 +77,7 @@ public final class MainActivity extends Activity {
         TextView sub = label(subtitle, 15, MUTED); sub.setPadding(dp(10), dp(4), 0, 0); page.addView(sub);
     }
     @Override public void onCreate(Bundle state) {
+        ipEnabled=getSharedPreferences("features",MODE_PRIVATE).getBoolean("ip_detection",false);
         palette = new ThemePalette(this);
         setTheme(palette.dark ? android.R.style.Theme_Material_NoActionBar : android.R.style.Theme_Material_Light_NoActionBar);
         super.onCreate(state);
@@ -95,6 +97,7 @@ public final class MainActivity extends Activity {
         pages.addView(settingsPage, new FrameLayout.LayoutParams(-1, -1));
         detailsPage=new ScrollView(this);details=new WifiDetailsView(this,palette);detailsPage.addView(details);
         pages.addView(detailsPage,new FrameLayout.LayoutParams(-1,-1));
+        riskPage=new ScrollView(this);if(ipEnabled){diagnostics=new IpDiagnosticsView(this,palette);riskPage.addView(diagnostics);}pages.addView(riskPage,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout home = column(), settings = column();
         home.setPadding(dp(16), 0, dp(16), dp(24)); settings.setPadding(dp(16), 0, dp(16), dp(24));
         addressPage.addView(home); settingsPage.addView(settings);
@@ -117,6 +120,7 @@ public final class MainActivity extends Activity {
         divider(live);
         live.addView(label("连接详情", 18, INK));
         signal = label("Wi-Fi 信号强度：正在读取…", 16, ACCENT); gap(live, 8); live.addView(signal);
+        channel = label("Wi-Fi 信道：正在读取…", 16, ACCENT); gap(live, 8); live.addView(channel);
         connection = label("正在读取设备与链路地址", 14, MUTED); gap(live, 5); live.addView(connection);
         section(home, "修改地址");
         LinearLayout change = card(home);
@@ -157,9 +161,21 @@ public final class MainActivity extends Activity {
         help.addView(label("有效范围", 19, INK)); gap(help, 5);
         help.addView(label("仅修改当前主 Wi-Fi。同一网络重连时保留，切换其他网络或重启后清除。允许有效单播地址；请勿与同网设备重复。", 14, MUTED));
         section(settings, "关于"); LinearLayout about = card(settings);
-        about.addView(label("Wi-Fi MAC  0.6.1", 19, INK)); gap(about, 5);
+        about.addView(label("Wi-Fi MAC  0.7.2", 19, INK)); gap(about, 5);
         about.addView(label("MLO 实验版 · LSPosed 模块\n诊断日志：WifiMacCurrent", 14, MUTED));
         gap(about, 12); about.addView(label("作者：垚沣酱", 16, ACCENT));
+
+        section(settings,"开发者趣味隐藏功能"); LinearLayout experimental=card(settings);
+        Switch ipSwitch=new Switch(this);ipSwitch.setText("启用 IP 检测");ipSwitch.setTextSize(16);ipSwitch.setTextColor(INK);ipSwitch.setMinimumHeight(dp(48));ipSwitch.setChecked(ipEnabled);
+        ipSwitch.setThumbTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{ACCENT,palette.disabled}));
+        ipSwitch.setTrackTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{palette.secondary,palette.divider}));
+        experimental.addView(ipSwitch);gap(experimental,6);experimental.addView(label("打开后显示底部 IP 检测栏目。检测仍需手动点击开始；关闭后隐藏入口并清除本次结果。",14,MUTED));
+        ipSwitch.setOnCheckedChangeListener((v,on)->{
+            ipEnabled=on;getSharedPreferences("features",MODE_PRIVATE).edit().putBoolean("ip_detection",on).apply();
+            if(diagnostics!=null){diagnostics.dispose();diagnostics=null;}riskPage.removeAllViews();
+            if(on){diagnostics=new IpDiagnosticsView(this,palette);riskPage.addView(diagnostics);}
+            riskTab.setVisibility(on?View.VISIBLE:View.GONE);if(!on&&selectedPage==3)selectPage(2);
+        });
 
         View line = new View(this); line.setBackgroundColor(palette.divider); shell.addView(line, new LinearLayout.LayoutParams(-1, dp(1)));
         LinearLayout nav = new LinearLayout(this); nav.setPadding(dp(12), dp(9), dp(12), dp(9));
@@ -170,6 +186,7 @@ public final class MainActivity extends Activity {
         addressTab.setContentDescription("地址页面"); settingsTab.setContentDescription("设置页面");
         nav.addView(addressTab, new LinearLayout.LayoutParams(0, dp(48), 1));
         nav.addView(detailsTab,new LinearLayout.LayoutParams(0,dp(48),1));
+        riskTab=label("IP 检测",15,MUTED);riskTab.setGravity(Gravity.CENTER);riskTab.setOnClickListener(v->selectPage(3));nav.addView(riskTab,new LinearLayout.LayoutParams(0,dp(48),1));riskTab.setVisibility(ipEnabled?View.VISIBLE:View.GONE);
         nav.addView(settingsTab, new LinearLayout.LayoutParams(0, dp(48), 1)); shell.addView(nav);
         addressTab.setOnClickListener(v -> selectPage(0)); settingsTab.setOnClickListener(v -> selectPage(2)); detailsTab.setOnClickListener(v -> selectPage(1));
         setContentView(shell); selectPage(state==null ? 0 : state.getInt("page",0));
@@ -214,6 +231,7 @@ public final class MainActivity extends Activity {
         if(mode==palette.mode&&color==palette.color)return;
         ThemePalette.save(this,mode,color); recreate();
     }
+    @Override protected void onDestroy(){if(diagnostics!=null)diagnostics.dispose();super.onDestroy();}
     @Override protected void onSaveInstanceState(Bundle out) {
         super.onSaveInstanceState(out); out.putInt("page",selectedPage); out.putString("draft",mac.getText().toString());
         out.putInt("addressScroll",addressPage.getScrollY()); out.putInt("settingsScroll",settingsPage.getScrollY());

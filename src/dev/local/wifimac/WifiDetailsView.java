@@ -87,9 +87,12 @@ public final class WifiDetailsView extends LinearLayout {
     private static String security(int n){String[] names={"开放网络","WEP","WPA/WPA2-Personal","WPA/WPA2-Enterprise","WPA3-SAE","WPA3-Enterprise 192-bit","OWE","WAPI-PSK","WAPI-CERT","WPA3-Enterprise","OSEN","Passpoint R1/R2","Passpoint R3","DPP"};return n>=0&&n<names.length?names[n]:"系统未报告（"+n+"）";}
     private String path(Network n){NetworkCapabilities c=n==null?null:cm.getNetworkCapabilities(n);if(c==null)return "无可用默认网络";if(c.hasTransport(NetworkCapabilities.TRANSPORT_VPN))return "VPN（查询结果可能为 VPN 出口）";if(c.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))return "Wi-Fi";if(c.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))return "移动数据（不是 Wi-Fi 出口）";return "其他网络";}
     private String signalValue="未连接 / 未报告";
+    private String channelValue="未连接 / 未报告";
+    public String channelText(){return channelValue;}
     public String signalText(){return signalValue;}
     public void refresh(){
         signalValue="未连接 / 未报告";
+        channelValue="未连接 / 未报告";
         try {
             WifiInfo w=wm.getConnectionInfo();
             boolean fine=activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED;
@@ -119,7 +122,10 @@ public final class WifiDetailsView extends LinearLayout {
             if(w!=null){
                 put("SSID",module.getString("ssid",w.getSSID()));put("Wi-Fi 标准",standard(w.getWifiStandard(),frequency));
                 String band=frequency>=57000?"60 GHz":frequency>=5925?"6 GHz":frequency>=4900?"5 GHz":frequency>=2400?"2.4 GHz":"未知频段";
-                put("频段 / 信道",band+" · "+frequency+" MHz · 信道 "+ScanResult.convertFrequencyMhzToChannelIfSupported(frequency));
+                int channelNumber=ScanResult.convertFrequencyMhzToChannelIfSupported(frequency);
+                if(w.getSupplicantState()==SupplicantState.COMPLETED && channelNumber>0)
+                    channelValue=channelNumber+" · "+band+" · "+frequency+" MHz"+(w.getWifiStandard()==8?"（关联链路）":"");
+                put("频段 / 信道",channelValue);
                 int rssi=w.getRssi();
                 if(w.getSupplicantState()==SupplicantState.COMPLETED && rssi > -127 && rssi < 0)
                     signalValue=rssi+" dBm"+(w.getWifiStandard()==8?"（关联链路）":"");
