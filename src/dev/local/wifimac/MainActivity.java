@@ -161,7 +161,7 @@ public final class MainActivity extends Activity {
         help.addView(label("有效范围", 19, INK)); gap(help, 5);
         help.addView(label("仅修改当前主 Wi-Fi。同一网络重连时保留，切换其他网络或重启后清除。允许有效单播地址；请勿与同网设备重复。", 14, MUTED));
         section(settings, "关于"); LinearLayout about = card(settings);
-        about.addView(label("Wi-Fi MAC  0.7.2", 19, INK)); gap(about, 5);
+        about.addView(label("Wi-Fi MAC  0.7.3", 19, INK)); gap(about, 5);
         about.addView(label("MLO 实验版 · LSPosed 模块\n诊断日志：WifiMacCurrent", 14, MUTED));
         gap(about, 12); about.addView(label("作者：垚沣酱", 16, ACCENT));
 

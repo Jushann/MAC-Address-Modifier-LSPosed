@@ -57,6 +57,9 @@ public final class WifiDetailsView extends LinearLayout {
         permission.setOnClickListener(v -> activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.NEARBY_WIFI_DEVICES},51));
         Button refresh=button("刷新详情",false); head.addView(refresh); refresh.setOnClickListener(v -> refresh());
+        group("当前 Wi-Fi 流量"); LinearLayout usage=card();
+        for(String name:new String[]{"下载","上传","合计","统计起点"}) row(usage,name);
+        usage.addView(text("统计整台手机经当前 Wi-Fi 接口收发的数据，包含局域网流量。自首次读取起累计，重新连接后重新计数。",14,muted));
         group("公网 IP"); LinearLayout pub=card();
         pub.addView(text("查询服务看到的出口地址",19,ink));
         route=text("",14,muted); pub.addView(route);
@@ -81,6 +84,36 @@ public final class WifiDetailsView extends LinearLayout {
     private Button button(String title,boolean filled){Button b=new Button(activity);b.setText(title);b.setTextSize(14);b.setAllCaps(false);b.setTextColor(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{palette.disabled,filled?palette.onAccent:accent}));b.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(palette.ripple),bg(filled?accent:palette.secondary),null));b.setMinHeight(dp(48));b.setPadding(dp(12),dp(8),dp(12),dp(8));LayoutParams p=new LayoutParams(-1,-2);p.topMargin=dp(12);p.bottomMargin=dp(10);b.setLayoutParams(p);return b;}
     private void row(LinearLayout parent,String name){TextView title=text(name,14,muted);title.setPadding(0,dp(9),0,dp(3));parent.addView(title);TextView value=text("未读取",17,ink);value.setTextIsSelectable(true);parent.addView(value);rows.put(name,value);}
     private void put(String name,String value){rows.get(name).setText(value==null||value.isEmpty()?"未报告":value);}
+    private void updateUsage(Network network, String iface) {
+        if (network == null || iface == null || iface.isEmpty()) return;
+        long rx = TrafficStats.getRxBytes(iface);
+        long tx = TrafficStats.getTxBytes(iface);
+        if (rx < 0 || tx < 0) {
+            put("统计起点", "系统未提供接口计数");
+            return;
+        }
+        SharedPreferences prefs = activity.getSharedPreferences("wifi_usage", Context.MODE_PRIVATE);
+        int boot = android.provider.Settings.Global.getInt(activity.getContentResolver(),
+                android.provider.Settings.Global.BOOT_COUNT, -1);
+        String session = boot + "/" + network.getNetworkHandle() + "/" + iface;
+        long baseRx = prefs.getLong("rx", -1);
+        long baseTx = prefs.getLong("tx", -1);
+        long since = prefs.getLong("since", 0);
+        if (!session.equals(prefs.getString("session", "")) || baseRx < 0 || baseTx < 0
+                || rx < baseRx || tx < baseTx) {
+            baseRx = rx;
+            baseTx = tx;
+            since = System.currentTimeMillis();
+            prefs.edit().putString("session", session).putLong("rx", rx).putLong("tx", tx)
+                    .putLong("since", since).apply();
+        }
+        long received = rx - baseRx;
+        long sent = tx - baseTx;
+        put("下载", android.text.format.Formatter.formatFileSize(activity, received));
+        put("上传", android.text.format.Formatter.formatFileSize(activity, sent));
+        put("合计", android.text.format.Formatter.formatFileSize(activity, received + sent));
+        put("统计起点", android.text.format.DateFormat.format("yyyy-MM-dd HH:mm:ss", since).toString());
+    }
     public void acceptModule(Bundle b){module=new Bundle(b);}
     private static String speed(int n){return n>0?n+" Mbps":"未报告";}
     public static String standard(int n,int frequency){switch(n){case 1:return "802.11a/b/g（传统 Wi-Fi）";case 4:return "802.11n · Wi-Fi 4";case 5:return "802.11ac · Wi-Fi 5";case 6:return "802.11ax · "+(frequency>=5925?"Wi-Fi 6E":"Wi-Fi 6");case 7:return "802.11ad · WiGig";case 8:return "802.11be · Wi-Fi 7";default:return "系统未报告";}}
@@ -117,6 +150,7 @@ public final class WifiDetailsView extends LinearLayout {
             for(TextView value:rows.values())value.setText("未连接 / 未报告");
             put("当前默认路由",path(active));
             if(lp==null){summary.setText(candidates.size()>1?"存在多个 Wi-Fi，无法确定主网络":"未检测到可用 Wi-Fi");return;}
+            updateUsage(wifi, lp.getInterfaceName());
             int frequency=w==null?0:w.getFrequency();
             summary.setText(w==null?"Wi-Fi 已连接":standard(w.getWifiStandard(),frequency));
             if(w!=null){

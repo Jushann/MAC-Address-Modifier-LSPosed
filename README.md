@@ -4,7 +4,11 @@
 
 An experimental LSPosed module for changing the active Wi-Fi station MAC, with MLO support, network diagnostics, and configurable light/dark themes.
 
-**当前版本：0.7.2 · MLO 实验版 · MIT License**
+**当前版本：0.7.3 · MLO 实验版 · MIT License**
+
+## 0.7.3
+
+在 Wi-Fi 详情中查看整台设备通过当前 Wi-Fi 接口的下载、上传、合计和统计起点，包含局域网流量。自首次读取当前连接时累计，重新连接后重新计数。已在 Redmi K70 Pro 验证。
 
 ## 0.7.2 更新
 
@@ -71,7 +75,7 @@ New-Item -ItemType Directory -Force dist | Out-Null
   -BuildTools "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0" `
   -XposedApi 'C:\deps\api-82.jar' `
   -Jdk 'C:\Program Files\Java\jdk-17' `
-  -OutputApk "$PWD\dist\WifiMacCurrent-0.7.2.apk"
+  -OutputApk "$PWD\dist\WifiMacCurrent-0.7.3.apk"
 ```
 
 脚本会在 `build/` 生成本地测试签名密钥。这是开发用途的签名流程；私钥不随源码发布。自行构建产生的签名通常不同，不能直接覆盖安装已有 Release APK。不要提交或公开自己的签名密钥。
